@@ -1,12 +1,14 @@
 # Railway uses Nixpacks for building
-# This ensures poppler is installed for pdf2image
+# This ensures poppler and Python are installed via nixpkgs (not mise)
 
 [phases.setup]
 nixPkgs = ["poppler_utils", "python311"]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
+cmds = [
+    "pip install --upgrade pip",
+    "pip install -r requirements.txt"
+]
 
 [start]
 cmd = "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
-

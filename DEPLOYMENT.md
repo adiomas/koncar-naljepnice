@@ -25,11 +25,11 @@
 4. Railway će detektirati Python projekt
 
 ### Korak 3: Konfiguriraj deployment
-Railway će automatski koristiti `nixpacks.toml` konfiguraciju.
-
 **VAŽNO:** Postavi root directory na `backend`:
 1. Idi u **Settings** → **General**
 2. Pod **Root Directory** upiši: `backend`
+
+**Railway će automatski koristiti Dockerfile** (preferira se nad nixpacks.toml)
 
 ### Korak 4: Postavi Environment Variables
 U Railway dashboard-u, idi na **Variables** tab i dodaj:
@@ -38,9 +38,10 @@ U Railway dashboard-u, idi na **Variables** tab i dodaj:
 |----------|-------|
 | `OPENAI_API_KEY` | `sk-...` (tvoj OpenAI API ključ) |
 | `FRONTEND_URL` | `https://tvoj-projekt.vercel.app` (dodaj nakon što deployaš frontend) |
+| `PORT` | `8000` (Railway automatski postavlja, ali možeš eksplicitno) |
 
 ### Korak 5: Deploy
-1. Railway će automatski buildati i deployati
+1. Railway će automatski buildati i deployati koristeći Dockerfile
 2. Dobit ćeš URL poput: `https://koncar-naljepnice-production.up.railway.app`
 3. **Sačuvaj ovaj URL** - trebat će ti za frontend
 
@@ -49,6 +50,10 @@ Otvori `https://tvoj-railway-url.railway.app/health` - trebao bi vratiti:
 ```json
 {"status": "healthy"}
 ```
+
+**Napomena:** Ako Railway i dalje pokušava koristiti mise umjesto Dockerfile-a:
+- U **Settings** → **Deploy** → **Build Command** ostavi prazno
+- Railway će automatski koristiti Dockerfile
 
 ---
 
@@ -97,6 +102,12 @@ Dodaj environment variable:
 
 ## Troubleshooting
 
+### "mise ERROR failed to install core:python@3.11.0"
+**Rješenje:** Railway koristi Dockerfile umjesto mise. Provjeri:
+- Root directory je postavljen na `backend`
+- Dockerfile postoji u `backend/` folderu
+- U Settings → Deploy, Build Command je prazan (Railway koristi Dockerfile)
+
 ### "CORS error" u browseru
 - Provjeri je li `FRONTEND_URL` pravilno postavljen na Railway
 - URL mora biti **bez trailing slash** (bez `/` na kraju)
@@ -106,7 +117,7 @@ Dodaj environment variable:
 - Provjeri imaš li credits na OpenAI računu
 
 ### PDF konverzija ne radi
-- Railway koristi `nixpacks.toml` za instalaciju Poppler-a
+- Dockerfile instalira `poppler-utils` automatski
 - Ako ne radi, provjeri Railway build logs
 
 ---
@@ -143,4 +154,3 @@ npm run dev
 ```
 
 Frontend će automatski koristiti `http://localhost:8000` ako `VITE_API_URL` nije postavljen.
-
