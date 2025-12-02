@@ -155,6 +155,7 @@ body {
 .value-cell {
     padding: 1.5mm 2mm;
     font-size: 9pt;
+    font-weight: bold;
     min-height: 7mm;
     word-break: break-word;
 }
@@ -162,6 +163,7 @@ body {
 .value-cell.small {
     width: 12mm;
     font-size: 8pt;
+    font-weight: bold;
 }
 
 .footer {
