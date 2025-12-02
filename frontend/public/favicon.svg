@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background -->
+  <rect width="200" height="200" fill="#ffffff"/>
+  
+  <!-- Blue letter K - geometric, modern design -->
+  <g fill="#0066CC">
+    <!-- Vertical stem (left side) -->
+    <rect x="40" y="25" width="32" height="150" rx="2"/>
+    
+    <!-- Upper diagonal stroke - thick geometric shape -->
+    <path d="M 72 25 L 72 100 L 155 25 L 155 55 L 100 100 L 155 100 L 155 130 L 100 100 L 72 100 Z" fill="#0066CC"/>
+    
+    <!-- Lower diagonal stroke - thick geometric shape -->
+    <path d="M 72 100 L 72 175 L 155 100 L 155 130 L 100 175 L 155 175 L 155 200 L 100 175 L 72 175 Z" fill="#0066CC"/>
+  </g>
+</svg>
+

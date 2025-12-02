@@ -6,8 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from .extraction import extract_data_from_images
-from .label_generator import generate_labels_pdf
-from .models import GenerateLabelsRequest, NarudzbaData
+from .label_generator import generate_labels_pdf, generate_labels_png
+from .models import GenerateLabelsRequest, NarudzbaData, OutputFormat
 from .pdf_processor import convert_pdf_to_images
 
 app = FastAPI(
@@ -81,33 +81,50 @@ async def extract_from_pdf(file: UploadFile = File(...)):
 
 
 @app.post("/generate-pdf")
-async def generate_pdf(request: GenerateLabelsRequest):
+async def generate_labels(request: GenerateLabelsRequest):
     """
-    Generate a PDF with labels from the provided data.
+    Generate labels in the specified format.
     
-    Returns a PDF file with one label per page (100mm x 100mm).
+    Supports:
+    - PDF: Single PDF file with one label per page (100mm x 100mm)
+    - PNG: ZIP file containing PNG images at 300 DPI (optimized for thermal label printers)
     """
     try:
         if not request.labels:
             raise HTTPException(status_code=400, detail="No labels provided")
         
-        pdf_bytes = generate_labels_pdf(request.labels)
-        
-        return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": 'attachment; filename="naljepnice.pdf"',
-                "Content-Length": str(len(pdf_bytes)),
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0",
-            }
-        )
+        if request.format == OutputFormat.PNG:
+            # Generate PNG ZIP for label printers
+            zip_bytes = generate_labels_png(request.labels, dpi=300)
+            return Response(
+                content=zip_bytes,
+                media_type="application/zip",
+                headers={
+                    "Content-Disposition": 'attachment; filename="naljepnice.zip"',
+                    "Content-Length": str(len(zip_bytes)),
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                }
+            )
+        else:
+            # Generate PDF (default)
+            pdf_bytes = generate_labels_pdf(request.labels)
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={
+                    "Content-Disposition": 'attachment; filename="naljepnice.pdf"',
+                    "Content-Length": str(len(pdf_bytes)),
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                }
+            )
     
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating labels: {str(e)}")
 
 
 if __name__ == "__main__":

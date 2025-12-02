@@ -1,6 +1,12 @@
-from typing import List, Optional
+from enum import Enum
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel
+
+
+class OutputFormat(str, Enum):
+    PDF = "pdf"
+    PNG = "png"  # Returns ZIP with PNG files at 300 DPI
 
 
 class Artikl(BaseModel):
@@ -32,4 +38,5 @@ class LabelData(BaseModel):
 
 class GenerateLabelsRequest(BaseModel):
     labels: List[LabelData]
+    format: OutputFormat = OutputFormat.PDF  # Default to PDF for backwards compatibility
 

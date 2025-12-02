@@ -30,15 +30,16 @@ PRAVILA EKSTRAKCIJE:
    - Naziv - puni tekst opisa artikla (npr. "LETVICA;A=1146;B=20;C=10;HGW")
    - Novi broj dijela - ako postoji broj između rednog broja i naziva
    - Količina - iz stupca "Količina/JM" (uključi jedinicu, npr. "28 KOM")
-   - Naziv objekta - vrijednost nakon "Proj:" (npr. "TenneT6 50-150-2")
-   - WBS - vrijednost nakon "WBS :" (npr. "T.030M.240612.02.01.01")
+   - Naziv objekta - SAMO ako postoji eksplicitni label "Proj:" ispred vrijednosti, ekstrahiraj tu vrijednost (npr. "TenneT6 50-150-2"). AKO NE POSTOJI "Proj:" label, ostavi PRAZAN STRING "".
+   - WBS - SAMO ako postoji eksplicitni label "WBS :" ispred vrijednosti, ekstrahiraj tu vrijednost (npr. "T.030M.240612.02.01.01"). AKO NE POSTOJI "WBS :" label, ostavi PRAZAN STRING "".
 
 VAŽNO:
-- Svaki artikl ima svoj redak s "Proj:" i "WBS :" vrijednostima
 - Nemoj preskakati artikle
 - Ako dokument ima više stranica, ekstrahiraj artikle sa svih stranica
 - Pazi na točnost brojeva i teksta - provjeri dvaput prije odgovora
 - Naziv može biti bilo koji tekst opisa proizvoda, ne samo LETVICA
+- Za naziv_objekta i wbs: ako u dokumentu NE POSTOJI odgovarajući label ("Proj:" ili "WBS :"), OBAVEZNO ostavi polje prazno (prazan string "")
+- Ne izmišljaj vrijednosti - ako label ne postoji, polje je prazno
 
 Odgovori ISKLJUČIVO u JSON formatu prema shemi."""
 
@@ -72,11 +73,11 @@ EXTRACTION_SCHEMA = {
                     },
                     "naziv_objekta": {
                         "type": "string",
-                        "description": "Vrijednost iz 'Proj:' retka"
+                        "description": "Vrijednost iz 'Proj:' retka. Ako 'Proj:' label NE POSTOJI, vrati prazan string ''"
                     },
                     "wbs": {
                         "type": "string",
-                        "description": "WBS broj iz 'WBS :' retka"
+                        "description": "WBS broj iz 'WBS :' retka. Ako 'WBS :' label NE POSTOJI, vrati prazan string ''"
                     }
                 },
                 "required": ["redni_broj", "naziv", "novi_broj_dijela", "kolicina", "naziv_objekta", "wbs"],

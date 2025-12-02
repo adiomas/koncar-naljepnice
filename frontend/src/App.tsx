@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { extractFromPdf, generatePdf } from './api';
+import { extractFromPdf, generateLabels, type OutputFormat } from './api';
 import { FileUpload } from './components/FileUpload';
 import { LabelEditor } from './components/LabelEditor';
 import { LabelPreview } from './components/LabelPreview';
@@ -14,6 +14,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [labels, setLabels] = useState<LabelData[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>('pdf');
 
   const handleFileSelect = async (file: File) => {
     setIsLoading(true);
@@ -50,16 +51,16 @@ function App() {
     ));
   };
 
-  const handleGeneratePdf = async () => {
+  const handleGenerateLabels = async () => {
     setIsGenerating(true);
     setError(null);
 
     try {
-      const blob = await generatePdf(labels);
+      const result = await generateLabels(labels, outputFormat);
       
       // Convert blob to File object for better macOS compatibility
-      const file = new File([blob], 'naljepnice.pdf', { 
-        type: 'application/pdf',
+      const file = new File([result.blob], result.filename, { 
+        type: result.mimeType,
         lastModified: Date.now()
       });
       
@@ -68,7 +69,7 @@ function App() {
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = 'naljepnice.pdf';
+      a.download = result.filename;
       document.body.appendChild(a);
       a.click();
       
@@ -78,7 +79,7 @@ function App() {
         URL.revokeObjectURL(url);
       }, 250);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Greška pri generiranju PDF-a');
+      setError(err instanceof Error ? err.message : 'Greška pri generiranju naljepnica');
     } finally {
       setIsGenerating(false);
     }
@@ -169,25 +170,41 @@ function App() {
                   Pronađeno {labels.length} artikala. Kliknite na naljepnicu za uređivanje.
                 </p>
               </div>
-              <button
-                onClick={handleGeneratePdf}
-                disabled={isGenerating || labels.length === 0}
-                className="px-6 py-3 bg-amber-400 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-900 font-semibold rounded-xl flex items-center gap-2 transition-colors shadow-lg shadow-amber-400/25"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
-                    Generiram...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Preuzmi PDF
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Format Selector */}
+                <div className="flex items-center gap-2">
+                  <label htmlFor="format" className="text-sm text-zinc-600">Format:</label>
+                  <select
+                    id="format"
+                    value={outputFormat}
+                    onChange={(e) => setOutputFormat(e.target.value as OutputFormat)}
+                    className="px-3 py-2 bg-white border border-zinc-300 rounded-lg text-sm font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                  >
+                    <option value="pdf">PDF</option>
+                    <option value="png">PNG (300 DPI)</option>
+                  </select>
+                </div>
+                
+                <button
+                  onClick={handleGenerateLabels}
+                  disabled={isGenerating || labels.length === 0}
+                  className="px-6 py-3 bg-amber-400 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-900 font-semibold rounded-xl flex items-center gap-2 transition-colors shadow-lg shadow-amber-400/25"
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+                      Generiram...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {outputFormat === 'png' ? 'Preuzmi PNG' : 'Preuzmi PDF'}
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
