@@ -57,22 +57,26 @@ function App() {
     try {
       const blob = await generatePdf(labels);
       
-      // Create download link with proper PDF type
-      const pdfBlob = new Blob([blob], { type: 'application/pdf' });
-      const url = URL.createObjectURL(pdfBlob);
+      // Convert blob to File object for better macOS compatibility
+      const file = new File([blob], 'naljepnice.pdf', { 
+        type: 'application/pdf',
+        lastModified: Date.now()
+      });
+      
+      // Create download link
+      const url = URL.createObjectURL(file);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
       a.download = 'naljepnice.pdf';
-      a.type = 'application/pdf';
       document.body.appendChild(a);
       a.click();
       
-      // Delay cleanup to ensure download starts
+      // Delay cleanup to ensure download completes
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-      }, 100);
+      }, 250);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Greška pri generiranju PDF-a');
     } finally {
