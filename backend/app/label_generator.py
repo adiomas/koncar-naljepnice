@@ -88,35 +88,35 @@ def generate_label_html(label: LabelData) -> str:
         <table class="content-table">
             <tr>
                 <td class="label-cell">Naziv</td>
-                <td class="value-cell nowrap" colspan="3" {naziv_style}>{label.naziv}</td>
+                <td class="value-cell" colspan="3" {naziv_style}>{label.naziv}</td>
             </tr>
             <tr>
                 <td class="label-cell">Novi broj<br>dijela</td>
-                <td class="value-cell nowrap" {novi_broj_style}>{label.novi_broj_dijela}</td>
+                <td class="value-cell" {novi_broj_style}>{label.novi_broj_dijela}</td>
                 <td class="label-cell small">Stari broj<br>dijela</td>
-                <td class="value-cell small nowrap" {stari_broj_style}>{label.stari_broj_dijela}</td>
+                <td class="value-cell small" {stari_broj_style}>{label.stari_broj_dijela}</td>
             </tr>
             <tr>
                 <td class="label-cell">Količina</td>
-                <td class="value-cell nowrap" colspan="3" {kolicina_style}>{label.kolicina}</td>
+                <td class="value-cell" colspan="3" {kolicina_style}>{label.kolicina}</td>
             </tr>
             <tr>
                 <td class="label-cell">Narudžba</td>
-                <td class="value-cell nowrap" {narudzba_style}>{label.narudzba}</td>
+                <td class="value-cell" {narudzba_style}>{label.narudzba}</td>
                 <td class="label-cell small">Account<br>assign.<br>Category</td>
-                <td class="value-cell small nowrap" {account_style}>{label.account_category}</td>
+                <td class="value-cell small" {account_style}>{label.account_category}</td>
             </tr>
             <tr>
                 <td class="label-cell">Naziv<br>objekta</td>
-                <td class="value-cell nowrap" colspan="3" {naziv_objekta_style}>{label.naziv_objekta}</td>
+                <td class="value-cell" colspan="3" {naziv_objekta_style}>{label.naziv_objekta}</td>
             </tr>
             <tr>
                 <td class="label-cell">WBS</td>
-                <td class="value-cell nowrap" colspan="3" {wbs_style}>{label.wbs}</td>
+                <td class="value-cell" colspan="3" {wbs_style}>{label.wbs}</td>
             </tr>
             <tr>
                 <td class="label-cell">Datum</td>
-                <td class="value-cell nowrap" {datum_style}>{label.datum}</td>
+                <td class="value-cell" {datum_style}>{label.datum}</td>
                 <td class="value-cell" colspan="2"></td>
             </tr>
         </table>
@@ -193,11 +193,13 @@ body {
     width: 100%;
     border-collapse: collapse;
     border: 0.5mm solid black;
+    table-layout: fixed;
 }
 
 .content-table td {
     border: 0.3mm solid black;
     vertical-align: middle;
+    overflow: hidden;
 }
 
 .label-cell {
@@ -219,12 +221,10 @@ body {
     padding: 1.5mm 2mm;
     font-size: 9pt;
     font-weight: bold;
-    min-height: 7mm;
-}
-
-.value-cell.nowrap {
-    white-space: nowrap;
+    height: 7mm;
+    max-height: 7mm;
     overflow: hidden;
+    white-space: nowrap;
 }
 
 .value-cell.small {
