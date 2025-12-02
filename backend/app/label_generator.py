@@ -38,39 +38,39 @@ def calculate_font_size(text: str, max_chars: int, base_font_pt: float = 9.0, mi
     return max(new_size, min_font_pt)
 
 
-def get_dynamic_style(text: str, max_chars: int, base_font_pt: float = 9.0) -> str:
+def get_dynamic_style(text: str, max_chars: int, base_font_pt: float = 9.0, min_font_pt: float = 5.0) -> str:
     """
-    Get inline style for dynamic font sizing.
+    Get inline style for dynamic font sizing (single line fields).
     
     Args:
         text: The text content
         max_chars: Maximum characters that fit at base font size
         base_font_pt: Base font size in points
+        min_font_pt: Minimum font size in points
     
     Returns:
-        Inline style string
+        Inline style string with calculated font size
     """
-    font_size = calculate_font_size(text, max_chars, base_font_pt)
-    if font_size < base_font_pt:
-        return f'style="font-size: {font_size:.1f}pt;"'
-    return ''
+    font_size = calculate_font_size(text, max_chars, base_font_pt, min_font_pt)
+    return f'style="font-size: {font_size:.1f}pt;"'
 
 
 def generate_label_html(label: LabelData) -> str:
     """Generate HTML for a single label."""
-    # Calculate dynamic font sizes for each field
-    # Available width for full-span value cell: ~72mm, which fits ~40 chars at 9pt
-    # Available width for half-span value cell: ~32mm, which fits ~18 chars at 9pt
+    # Field configuration: (max_chars at base font, base_font_pt, min_font_pt)
+    # Full-width value cell: ~72mm width, fits ~40 chars at 9pt
+    # Half-width value cell: ~32mm width, fits ~18 chars at 9pt
+    # Small value cell: ~12mm width, fits ~8 chars at 8pt
     
-    naziv_style = get_dynamic_style(label.naziv, 40, 9.0)
-    novi_broj_style = get_dynamic_style(label.novi_broj_dijela, 18, 9.0)
-    stari_broj_style = get_dynamic_style(label.stari_broj_dijela, 10, 8.0)
-    kolicina_style = get_dynamic_style(label.kolicina, 40, 9.0)
-    narudzba_style = get_dynamic_style(label.narudzba, 18, 9.0)
-    account_style = get_dynamic_style(label.account_category, 8, 8.0)
-    naziv_objekta_style = get_dynamic_style(label.naziv_objekta, 40, 9.0)
-    wbs_style = get_dynamic_style(label.wbs, 40, 9.0)
-    datum_style = get_dynamic_style(label.datum, 18, 9.0)
+    # Dynamic styles for all fields except Naziv (which can wrap)
+    novi_broj_style = get_dynamic_style(label.novi_broj_dijela, 20, 9.0, 5.0)
+    stari_broj_style = get_dynamic_style(label.stari_broj_dijela, 10, 8.0, 5.0)
+    kolicina_style = get_dynamic_style(label.kolicina, 45, 9.0, 6.0)
+    narudzba_style = get_dynamic_style(label.narudzba, 20, 9.0, 5.0)
+    account_style = get_dynamic_style(label.account_category, 10, 8.0, 5.0)
+    naziv_objekta_style = get_dynamic_style(label.naziv_objekta, 45, 9.0, 5.0)
+    wbs_style = get_dynamic_style(label.wbs, 45, 9.0, 5.0)
+    datum_style = get_dynamic_style(label.datum, 20, 9.0, 6.0)
     
     return f'''
     <div class="label">
@@ -88,35 +88,35 @@ def generate_label_html(label: LabelData) -> str:
         <table class="content-table">
             <tr>
                 <td class="label-cell">Naziv</td>
-                <td class="value-cell" colspan="3" {naziv_style}>{label.naziv}</td>
+                <td class="value-cell wrap" colspan="3">{label.naziv}</td>
             </tr>
             <tr>
                 <td class="label-cell">Novi broj<br>dijela</td>
-                <td class="value-cell" {novi_broj_style}>{label.novi_broj_dijela}</td>
+                <td class="value-cell nowrap" {novi_broj_style}>{label.novi_broj_dijela}</td>
                 <td class="label-cell small">Stari broj<br>dijela</td>
-                <td class="value-cell small" {stari_broj_style}>{label.stari_broj_dijela}</td>
+                <td class="value-cell small nowrap" {stari_broj_style}>{label.stari_broj_dijela}</td>
             </tr>
             <tr>
                 <td class="label-cell">Količina</td>
-                <td class="value-cell" colspan="3" {kolicina_style}>{label.kolicina}</td>
+                <td class="value-cell nowrap" colspan="3" {kolicina_style}>{label.kolicina}</td>
             </tr>
             <tr>
                 <td class="label-cell">Narudžba</td>
-                <td class="value-cell" {narudzba_style}>{label.narudzba}</td>
+                <td class="value-cell nowrap" {narudzba_style}>{label.narudzba}</td>
                 <td class="label-cell small">Account<br>assign.<br>Category</td>
-                <td class="value-cell small" {account_style}>{label.account_category}</td>
+                <td class="value-cell small nowrap" {account_style}>{label.account_category}</td>
             </tr>
             <tr>
                 <td class="label-cell">Naziv<br>objekta</td>
-                <td class="value-cell" colspan="3" {naziv_objekta_style}>{label.naziv_objekta}</td>
+                <td class="value-cell nowrap" colspan="3" {naziv_objekta_style}>{label.naziv_objekta}</td>
             </tr>
             <tr>
                 <td class="label-cell">WBS</td>
-                <td class="value-cell" colspan="3" {wbs_style}>{label.wbs}</td>
+                <td class="value-cell nowrap" colspan="3" {wbs_style}>{label.wbs}</td>
             </tr>
             <tr>
                 <td class="label-cell">Datum</td>
-                <td class="value-cell" {datum_style}>{label.datum}</td>
+                <td class="value-cell nowrap" {datum_style}>{label.datum}</td>
                 <td class="value-cell" colspan="2"></td>
             </tr>
         </table>
@@ -221,16 +221,35 @@ body {
     padding: 1.5mm 2mm;
     font-size: 9pt;
     font-weight: bold;
-    height: 7mm;
-    max-height: 7mm;
     overflow: hidden;
+}
+
+/* Naziv field - can wrap to multiple lines */
+.value-cell.wrap {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.15;
+    height: auto;
+    min-height: 7mm;
+    max-height: 14mm;
+}
+
+/* All other fields - single line, font shrinks to fit */
+.value-cell.nowrap {
     white-space: nowrap;
+    height: 7mm;
+    line-height: 7mm;
 }
 
 .value-cell.small {
     width: 12mm;
     font-size: 8pt;
     font-weight: bold;
+}
+
+.value-cell.small.nowrap {
+    height: 7mm;
+    line-height: 7mm;
 }
 
 .footer {

@@ -6,11 +6,8 @@ interface LabelPreviewProps {
 }
 
 /**
- * Calculate dynamic font size based on text length
- * @param text - The text content
- * @param maxChars - Maximum characters that fit at base font size
- * @param baseFontPx - Base font size in pixels
- * @param minFontPx - Minimum font size in pixels
+ * Calculate dynamic font size based on text length.
+ * Used for single-line fields that should shrink to fit.
  */
 function calculateFontSize(
   text: string,
@@ -27,33 +24,35 @@ function calculateFontSize(
 }
 
 /**
- * Get inline style for dynamic font sizing
+ * Get inline style for single-line fields with dynamic font sizing.
+ * Text won't wrap - font shrinks to fit instead.
  */
-function getDynamicStyle(
+function getSingleLineStyle(
   text: string,
   maxChars: number,
-  baseFontPx: number
+  baseFontPx: number,
+  minFontPx: number = 5
 ): React.CSSProperties {
-  const fontSize = calculateFontSize(text, maxChars, baseFontPx);
+  const fontSize = calculateFontSize(text, maxChars, baseFontPx, minFontPx);
   return {
     fontSize: `${fontSize}px`,
-    whiteSpace: 'nowrap' as const,
-    overflow: 'hidden' as const,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    lineHeight: '1.2',
   };
 }
 
 export function LabelPreview({ label, index }: LabelPreviewProps) {
-  // Calculate dynamic styles for each field
-  // Max chars are approximate based on available width in preview
-  const nazivStyle = getDynamicStyle(label.naziv, 28, 9);
-  const noviBrojStyle = getDynamicStyle(label.novi_broj_dijela, 12, 9);
-  const stariBrojStyle = getDynamicStyle(label.stari_broj_dijela, 8, 8);
-  const kolicinaStyle = getDynamicStyle(label.kolicina, 28, 9);
-  const narudzbaStyle = getDynamicStyle(label.narudzba, 12, 9);
-  const accountStyle = getDynamicStyle(label.account_category, 6, 7);
-  const nazivObjektaStyle = getDynamicStyle(label.naziv_objekta, 28, 9);
-  const wbsStyle = getDynamicStyle(label.wbs, 30, 8);
-  const datumStyle = getDynamicStyle(label.datum, 12, 9);
+  // Dynamic styles for single-line fields (all except Naziv)
+  // Max chars are based on available width in preview component
+  const noviBrojStyle = getSingleLineStyle(label.novi_broj_dijela, 14, 9, 5);
+  const stariBrojStyle = getSingleLineStyle(label.stari_broj_dijela, 8, 8, 5);
+  const kolicinaStyle = getSingleLineStyle(label.kolicina, 32, 9, 6);
+  const narudzbaStyle = getSingleLineStyle(label.narudzba, 14, 9, 5);
+  const accountStyle = getSingleLineStyle(label.account_category, 8, 7, 5);
+  const nazivObjektaStyle = getSingleLineStyle(label.naziv_objekta, 32, 9, 5);
+  const wbsStyle = getSingleLineStyle(label.wbs, 34, 8, 5);
+  const datumStyle = getSingleLineStyle(label.datum, 14, 9, 6);
 
   return (
     <div className="bg-amber-400 rounded-lg p-3 shadow-lg w-full max-w-[280px] text-xs font-sans">
@@ -71,31 +70,31 @@ export function LabelPreview({ label, index }: LabelPreviewProps) {
 
       {/* Content */}
       <div className="space-y-0.5">
-        {/* Naziv */}
+        {/* Naziv - CAN wrap to multiple lines */}
         <div className="flex border border-black/40">
           <div className="w-14 shrink-0 p-1 text-[8px] border-r border-black/40 bg-amber-500/30">Naziv</div>
-          <div className="flex-1 p-1 font-medium" style={nazivStyle}>{label.naziv}</div>
+          <div className="flex-1 p-1 text-[9px] font-medium leading-tight" style={{ wordBreak: 'break-word' }}>{label.naziv}</div>
         </div>
 
-        {/* Novi/Stari broj dijela */}
+        {/* Novi/Stari broj dijela - single line */}
         <div className="flex border border-black/40 border-t-0">
           <div className="w-14 shrink-0 p-1 text-[8px] border-r border-black/40 bg-amber-500/30 leading-tight">
             Novi broj<br/>dijela
           </div>
-          <div className="flex-1 p-1" style={noviBrojStyle}>{label.novi_broj_dijela}</div>
+          <div className="flex-1 p-1 font-medium" style={noviBrojStyle}>{label.novi_broj_dijela}</div>
           <div className="w-12 shrink-0 p-1 text-[7px] border-l border-r border-black/40 bg-amber-500/30 leading-tight">
             Stari broj<br/>dijela
           </div>
           <div className="w-10 p-1" style={stariBrojStyle}>{label.stari_broj_dijela}</div>
         </div>
 
-        {/* Količina */}
+        {/* Količina - single line */}
         <div className="flex border border-black/40 border-t-0">
           <div className="w-14 shrink-0 p-1 text-[8px] border-r border-black/40 bg-amber-500/30">Količina</div>
           <div className="flex-1 p-1 font-medium" style={kolicinaStyle}>{label.kolicina}</div>
         </div>
 
-        {/* Narudžba / Account */}
+        {/* Narudžba / Account - single line */}
         <div className="flex border border-black/40 border-t-0">
           <div className="w-14 shrink-0 p-1 text-[8px] border-r border-black/40 bg-amber-500/30">Narudžba</div>
           <div className="flex-1 p-1 font-medium" style={narudzbaStyle}>{label.narudzba}</div>
@@ -105,7 +104,7 @@ export function LabelPreview({ label, index }: LabelPreviewProps) {
           <div className="w-10 p-1" style={accountStyle}>{label.account_category}</div>
         </div>
 
-        {/* Naziv objekta */}
+        {/* Naziv objekta - single line */}
         <div className="flex border border-black/40 border-t-0">
           <div className="w-14 shrink-0 p-1 text-[8px] border-r border-black/40 bg-amber-500/30 leading-tight">
             Naziv<br/>objekta
@@ -113,13 +112,13 @@ export function LabelPreview({ label, index }: LabelPreviewProps) {
           <div className="flex-1 p-1" style={nazivObjektaStyle}>{label.naziv_objekta}</div>
         </div>
 
-        {/* WBS */}
+        {/* WBS - single line */}
         <div className="flex border border-black/40 border-t-0">
           <div className="w-14 shrink-0 p-1 text-[8px] border-r border-black/40 bg-amber-500/30">WBS</div>
           <div className="flex-1 p-1 font-mono" style={wbsStyle}>{label.wbs}</div>
         </div>
 
-        {/* Datum */}
+        {/* Datum - single line */}
         <div className="flex border border-black/40 border-t-0">
           <div className="w-14 shrink-0 p-1 text-[8px] border-r border-black/40 bg-amber-500/30">Datum</div>
           <div className="flex-1 p-1" style={datumStyle}>{label.datum}</div>
