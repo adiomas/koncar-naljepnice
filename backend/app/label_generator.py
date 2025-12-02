@@ -1,6 +1,9 @@
 import io
+from datetime import datetime
 from typing import List
+
 from weasyprint import HTML
+
 from .models import LabelData
 
 
@@ -181,13 +184,21 @@ def generate_labels_pdf(labels: List[LabelData]) -> bytes:
         labels: List of label data
     
     Returns:
-        PDF file as bytes
+        PDF file as bytes (compatible with macOS Preview, Windows, and browsers)
     """
+    # Generate HTML with metadata for better compatibility
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
     html_content = f'''
     <!DOCTYPE html>
-    <html>
+    <html lang="hr">
     <head>
         <meta charset="UTF-8">
+        <title>QA Identifikacijske Kartice - Končar</title>
+        <meta name="author" content="Končar Energetski Transformatori d.o.o.">
+        <meta name="generator" content="WeasyPrint">
+        <meta name="keywords" content="QA, identifikacija, naljepnice, Končar">
+        <meta name="description" content="QA identifikacijske kartice za {len(labels)} artikala">
         <style>{LABEL_CSS}</style>
     </head>
     <body>
@@ -197,7 +208,22 @@ def generate_labels_pdf(labels: List[LabelData]) -> bytes:
     '''
     
     pdf_buffer = io.BytesIO()
-    HTML(string=html_content).write_pdf(pdf_buffer)
+    
+    # Generate PDF with compatibility options
+    HTML(string=html_content).write_pdf(
+        pdf_buffer,
+        # Use PDF 1.7 for maximum compatibility (macOS Preview, Windows, browsers)
+        pdf_version='1.7',
+        # Include sRGB color profile for consistent colors
+        srgb=True,
+        # Optimize images for smaller file size
+        optimize_images=True,
+        # JPEG quality (85 is good balance)
+        jpeg_quality=85,
+        # Don't use PDF/A variant (can cause issues with some viewers)
+        # Instead use standard PDF with proper metadata
+    )
+    
     pdf_buffer.seek(0)
     
     return pdf_buffer.getvalue()
