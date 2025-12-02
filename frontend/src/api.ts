@@ -34,5 +34,7 @@ export async function generatePdf(labels: LabelData[]): Promise<Blob> {
     throw new Error(error.detail || 'Failed to generate PDF');
   }
 
-  return response.blob();
+  // Explicitly create blob with PDF MIME type to ensure macOS Preview compatibility
+  const arrayBuffer = await response.arrayBuffer();
+  return new Blob([arrayBuffer], { type: 'application/pdf' });
 }
