@@ -57,15 +57,22 @@ function App() {
     try {
       const blob = await generatePdf(labels);
       
-      // Create download link
-      const url = URL.createObjectURL(blob);
+      // Create download link with proper PDF type
+      const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
+      a.style.display = 'none';
       a.href = url;
       a.download = 'naljepnice.pdf';
+      a.type = 'application/pdf';
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      
+      // Delay cleanup to ensure download starts
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Greška pri generiranju PDF-a');
     } finally {

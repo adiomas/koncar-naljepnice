@@ -96,7 +96,11 @@ async def generate_pdf(request: GenerateLabelsRequest):
             content=pdf_bytes,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": "attachment; filename=naljepnice.pdf"
+                "Content-Disposition": 'attachment; filename="naljepnice.pdf"',
+                "Content-Length": str(len(pdf_bytes)),
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
             }
         )
     
