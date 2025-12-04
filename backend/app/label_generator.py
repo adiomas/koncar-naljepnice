@@ -86,6 +86,12 @@ def generate_label_html(label: LabelData) -> str:
         </div>
         
         <table class="content-table">
+            <colgroup>
+                <col style="width: 18mm;">
+                <col style="width: 36mm;">
+                <col style="width: 14mm;">
+                <col style="width: 14mm;">
+            </colgroup>
             <tr>
                 <td class="label-cell">Naziv</td>
                 <td class="value-cell wrap" colspan="3">{label.naziv}</td>
@@ -212,7 +218,7 @@ body {
 }
 
 .label-cell.small {
-    width: 12mm;
+    width: 14mm;
     font-size: 6.5pt;
     padding: 0.5mm 1mm;
 }
@@ -226,7 +232,7 @@ body {
 
 /* Main value cell in 4-column rows (Novi broj dijela, Narudžba, Datum) */
 .value-cell.medium {
-    width: 42mm;
+    width: 36mm;
 }
 
 /* Naziv field - can wrap to multiple lines */
@@ -247,7 +253,7 @@ body {
 }
 
 .value-cell.small {
-    width: 10mm;
+    width: 14mm;
     font-size: 7pt;
     font-weight: bold;
 }
