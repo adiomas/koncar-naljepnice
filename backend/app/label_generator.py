@@ -63,11 +63,11 @@ def generate_label_html(label: LabelData) -> str:
     # Small value cell: ~12mm width, fits ~8 chars at 8pt
     
     # Dynamic styles for all fields except Naziv (which can wrap)
-    novi_broj_style = get_dynamic_style(label.novi_broj_dijela, 20, 9.0, 5.0)
-    stari_broj_style = get_dynamic_style(label.stari_broj_dijela, 10, 8.0, 5.0)
+    novi_broj_style = get_dynamic_style(label.novi_broj_dijela, 24, 9.0, 5.0)
+    stari_broj_style = get_dynamic_style(label.stari_broj_dijela, 6, 7.0, 4.5)
     kolicina_style = get_dynamic_style(label.kolicina, 45, 9.0, 6.0)
-    narudzba_style = get_dynamic_style(label.narudzba, 20, 9.0, 5.0)
-    account_style = get_dynamic_style(label.account_category, 10, 8.0, 5.0)
+    narudzba_style = get_dynamic_style(label.narudzba, 24, 9.0, 5.0)
+    account_style = get_dynamic_style(label.account_category, 6, 7.0, 4.5)
     naziv_objekta_style = get_dynamic_style(label.naziv_objekta, 45, 9.0, 5.0)
     wbs_style = get_dynamic_style(label.wbs, 45, 9.0, 5.0)
     datum_style = get_dynamic_style(label.datum, 20, 9.0, 6.0)
@@ -212,9 +212,9 @@ body {
 }
 
 .label-cell.small {
-    width: 14mm;
-    font-size: 7pt;
-    padding: 1mm 1.5mm;
+    width: 10mm;
+    font-size: 6.5pt;
+    padding: 0.5mm 1mm;
 }
 
 .value-cell {
@@ -242,8 +242,8 @@ body {
 }
 
 .value-cell.small {
-    width: 12mm;
-    font-size: 8pt;
+    width: 8mm;
+    font-size: 7pt;
     font-weight: bold;
 }
 
