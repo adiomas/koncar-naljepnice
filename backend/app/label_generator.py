@@ -63,11 +63,11 @@ def generate_label_html(label: LabelData) -> str:
     # Small value cell: ~12mm width, fits ~8 chars at 8pt
     
     # Dynamic styles for all fields except Naziv (which can wrap)
-    novi_broj_style = get_dynamic_style(label.novi_broj_dijela, 24, 9.0, 5.0)
-    stari_broj_style = get_dynamic_style(label.stari_broj_dijela, 6, 7.0, 4.5)
+    novi_broj_style = get_dynamic_style(label.novi_broj_dijela, 22, 9.0, 5.0)
+    stari_broj_style = get_dynamic_style(label.stari_broj_dijela, 8, 7.0, 4.5)
     kolicina_style = get_dynamic_style(label.kolicina, 45, 9.0, 6.0)
-    narudzba_style = get_dynamic_style(label.narudzba, 24, 9.0, 5.0)
-    account_style = get_dynamic_style(label.account_category, 6, 7.0, 4.5)
+    narudzba_style = get_dynamic_style(label.narudzba, 22, 9.0, 5.0)
+    account_style = get_dynamic_style(label.account_category, 8, 7.0, 4.5)
     naziv_objekta_style = get_dynamic_style(label.naziv_objekta, 45, 9.0, 5.0)
     wbs_style = get_dynamic_style(label.wbs, 45, 9.0, 5.0)
     datum_style = get_dynamic_style(label.datum, 20, 9.0, 6.0)
@@ -92,7 +92,7 @@ def generate_label_html(label: LabelData) -> str:
             </tr>
             <tr>
                 <td class="label-cell">Novi broj<br>dijela</td>
-                <td class="value-cell nowrap" {novi_broj_style}>{label.novi_broj_dijela}</td>
+                <td class="value-cell medium nowrap" {novi_broj_style}>{label.novi_broj_dijela}</td>
                 <td class="label-cell small">Stari broj<br>dijela</td>
                 <td class="value-cell small nowrap" {stari_broj_style}>{label.stari_broj_dijela}</td>
             </tr>
@@ -102,7 +102,7 @@ def generate_label_html(label: LabelData) -> str:
             </tr>
             <tr>
                 <td class="label-cell">Narudžba</td>
-                <td class="value-cell nowrap" {narudzba_style}>{label.narudzba}</td>
+                <td class="value-cell medium nowrap" {narudzba_style}>{label.narudzba}</td>
                 <td class="label-cell small">Account<br>assign.<br>Category</td>
                 <td class="value-cell small nowrap" {account_style}>{label.account_category}</td>
             </tr>
@@ -116,7 +116,7 @@ def generate_label_html(label: LabelData) -> str:
             </tr>
             <tr>
                 <td class="label-cell">Datum</td>
-                <td class="value-cell nowrap" {datum_style}>{label.datum}</td>
+                <td class="value-cell medium nowrap" {datum_style}>{label.datum}</td>
                 <td class="value-cell" colspan="2"></td>
             </tr>
         </table>
@@ -212,7 +212,7 @@ body {
 }
 
 .label-cell.small {
-    width: 10mm;
+    width: 12mm;
     font-size: 6.5pt;
     padding: 0.5mm 1mm;
 }
@@ -222,6 +222,11 @@ body {
     font-size: 9pt;
     font-weight: bold;
     overflow: hidden;
+}
+
+/* Main value cell in 4-column rows (Novi broj dijela, Narudžba, Datum) */
+.value-cell.medium {
+    width: 42mm;
 }
 
 /* Naziv field - can wrap to multiple lines */
@@ -242,7 +247,7 @@ body {
 }
 
 .value-cell.small {
-    width: 8mm;
+    width: 10mm;
     font-size: 7pt;
     font-weight: bold;
 }
