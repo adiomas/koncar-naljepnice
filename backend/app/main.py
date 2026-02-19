@@ -49,35 +49,51 @@ async def health_check():
     return {"status": "healthy"}
 
 
+MAX_FILE_SIZE = 30 * 1024 * 1024  # 30MB
+MAX_LABELS = 100
+
+
 @app.post("/extract", response_model=NarudzbaData)
 async def extract_from_pdf(file: UploadFile = File(...)):
     """
     Extract order data from a PDF file.
-    
+
     Accepts a PDF file, converts pages to images, and uses OpenAI Vision
     to extract structured data about items in the order.
     """
     if not file.filename.lower().endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported")
-    
+        raise HTTPException(status_code=400, detail="Samo PDF datoteke su podržane")
+
     try:
         # Read PDF content
         pdf_bytes = await file.read()
-        
+
+        if len(pdf_bytes) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Datoteka je prevelika ({len(pdf_bytes) // (1024*1024)}MB). Maksimum je 30MB."
+            )
+
         # Convert PDF to images
         images = convert_pdf_to_images(pdf_bytes)
-        
+
         if not images:
-            raise HTTPException(status_code=400, detail="Could not extract pages from PDF")
-        
+            raise HTTPException(status_code=400, detail="Nije moguće ekstrahirati stranice iz PDF-a")
+
         # Extract data using OpenAI Vision
         data = extract_data_from_images(images)
-        
+
         return data
-    
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Greška pri obradi PDF-a: {str(e)}")
 
 
 @app.post("/generate-pdf")
@@ -91,8 +107,14 @@ async def generate_labels(request: GenerateLabelsRequest):
     """
     try:
         if not request.labels:
-            raise HTTPException(status_code=400, detail="No labels provided")
-        
+            raise HTTPException(status_code=400, detail="Nema naljepnica za generiranje")
+
+        if len(request.labels) > MAX_LABELS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Previše naljepnica ({len(request.labels)}). Maksimum je {MAX_LABELS}."
+            )
+
         if request.format == OutputFormat.PNG:
             # Generate PNG ZIP for label printers
             zip_bytes = generate_labels_png(request.labels, dpi=300)
@@ -122,9 +144,11 @@ async def generate_labels(request: GenerateLabelsRequest):
                 }
             )
     
+    except HTTPException:
+        raise
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error generating labels: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Greška pri generiranju naljepnica: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import html
 import io
 import zipfile
 from datetime import datetime
@@ -57,11 +58,18 @@ def get_dynamic_style(text: str, max_chars: int, base_font_pt: float = 9.0, min_
 
 def generate_label_html(label: LabelData) -> str:
     """Generate HTML for a single label."""
-    # Field configuration: (max_chars at base font, base_font_pt, min_font_pt)
-    # Full-width value cell: ~72mm width, fits ~40 chars at 9pt
-    # Half-width value cell: ~32mm width, fits ~18 chars at 9pt
-    # Small value cell: ~12mm width, fits ~8 chars at 8pt
-    
+    # Escape all user-provided values to prevent HTML injection
+    esc = html.escape
+    naziv = esc(label.naziv)
+    novi_broj = esc(label.novi_broj_dijela)
+    stari_broj = esc(label.stari_broj_dijela)
+    kolicina = esc(label.kolicina)
+    narudzba = esc(label.narudzba)
+    account = esc(label.account_category)
+    naziv_objekta = esc(label.naziv_objekta)
+    wbs = esc(label.wbs)
+    datum = esc(label.datum)
+
     # Dynamic styles for all fields except Naziv (which can wrap)
     novi_broj_style = get_dynamic_style(label.novi_broj_dijela, 22, 9.0, 5.0)
     stari_broj_style = get_dynamic_style(label.stari_broj_dijela, 8, 7.0, 4.5)
@@ -71,7 +79,7 @@ def generate_label_html(label: LabelData) -> str:
     naziv_objekta_style = get_dynamic_style(label.naziv_objekta, 45, 9.0, 5.0)
     wbs_style = get_dynamic_style(label.wbs, 45, 9.0, 5.0)
     datum_style = get_dynamic_style(label.datum, 20, 9.0, 6.0)
-    
+
     return f'''
     <div class="label">
         <div class="header">
@@ -84,7 +92,7 @@ def generate_label_html(label: LabelData) -> str:
                 <div class="qa-subtitle">- Dobavni dijelovi -</div>
             </div>
         </div>
-        
+
         <table class="content-table">
             <colgroup>
                 <col style="width: 18mm;">
@@ -94,39 +102,39 @@ def generate_label_html(label: LabelData) -> str:
             </colgroup>
             <tr>
                 <td class="label-cell">Naziv</td>
-                <td class="value-cell wrap" colspan="3">{label.naziv}</td>
+                <td class="value-cell wrap" colspan="3">{naziv}</td>
             </tr>
             <tr>
                 <td class="label-cell">Novi broj<br>dijela</td>
-                <td class="value-cell medium nowrap" {novi_broj_style}>{label.novi_broj_dijela}</td>
+                <td class="value-cell medium nowrap" {novi_broj_style}>{novi_broj}</td>
                 <td class="label-cell small">Stari broj<br>dijela</td>
-                <td class="value-cell small nowrap" {stari_broj_style}>{label.stari_broj_dijela}</td>
+                <td class="value-cell small nowrap" {stari_broj_style}>{stari_broj}</td>
             </tr>
             <tr>
                 <td class="label-cell">Količina</td>
-                <td class="value-cell nowrap" colspan="3" {kolicina_style}>{label.kolicina}</td>
+                <td class="value-cell nowrap" colspan="3" {kolicina_style}>{kolicina}</td>
             </tr>
             <tr>
                 <td class="label-cell">Narudžba</td>
-                <td class="value-cell medium nowrap" {narudzba_style}>{label.narudzba}</td>
+                <td class="value-cell medium nowrap" {narudzba_style}>{narudzba}</td>
                 <td class="label-cell small">Account<br>assign.<br>Category</td>
-                <td class="value-cell small nowrap" {account_style}>{label.account_category}</td>
+                <td class="value-cell small nowrap" {account_style}>{account}</td>
             </tr>
             <tr>
                 <td class="label-cell">Naziv<br>objekta</td>
-                <td class="value-cell nowrap" colspan="3" {naziv_objekta_style}>{label.naziv_objekta}</td>
+                <td class="value-cell nowrap" colspan="3" {naziv_objekta_style}>{naziv_objekta}</td>
             </tr>
             <tr>
                 <td class="label-cell">WBS</td>
-                <td class="value-cell nowrap" colspan="3" {wbs_style}>{label.wbs}</td>
+                <td class="value-cell nowrap" colspan="3" {wbs_style}>{wbs}</td>
             </tr>
             <tr>
                 <td class="label-cell">Datum</td>
-                <td class="value-cell medium nowrap" {datum_style}>{label.datum}</td>
+                <td class="value-cell medium nowrap" {datum_style}>{datum}</td>
                 <td class="value-cell" colspan="2"></td>
             </tr>
         </table>
-        
+
         <div class="footer">KPT-OI-077</div>
     </div>
     '''

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { LabelData } from "../types";
 
 interface LabelEditorProps {
@@ -6,7 +7,7 @@ interface LabelEditorProps {
   onChange: (index: number, field: keyof LabelData, value: string) => void;
 }
 
-export function LabelEditor({ label, index, onChange }: LabelEditorProps) {
+export const LabelEditor = memo(function LabelEditor({ label, index, onChange }: LabelEditorProps) {
   const fields: { key: keyof LabelData; label: string }[] = [
     { key: 'naziv', label: 'Naziv' },
     { key: 'novi_broj_dijela', label: 'Novi broj dijela' },
@@ -44,9 +45,7 @@ export function LabelEditor({ label, index, onChange }: LabelEditorProps) {
       </div>
     </div>
   );
-}
-
-
+});
 
 
 

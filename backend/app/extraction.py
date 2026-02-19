@@ -1,11 +1,17 @@
 import base64
 import json
+import time
 from typing import List, Optional
 
-from openai import OpenAI
+import httpx
+from openai import APITimeoutError, OpenAI, RateLimitError, APIStatusError
 
 from .config import OPENAI_API_KEY
 from .models import Artikl, NarudzbaData
+
+MAX_PAGES = 20
+MAX_RETRIES = 3
+API_TIMEOUT = 120  # seconds
 
 # Initialize client lazily
 _client: Optional[OpenAI] = None
@@ -15,7 +21,10 @@ def get_client() -> OpenAI:
     if _client is None:
         if not OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY is not set. Please set it in .env file.")
-        _client = OpenAI(api_key=OPENAI_API_KEY)
+        _client = OpenAI(
+            api_key=OPENAI_API_KEY,
+            timeout=httpx.Timeout(API_TIMEOUT, connect=10.0),
+        )
     return _client
 
 EXTRACTION_PROMPT = """Ti si ekspert za ekstrakciju strukturiranih podataka iz poslovnih dokumenata.
@@ -127,18 +136,28 @@ def encode_image_to_base64(image_bytes: bytes) -> str:
 def extract_data_from_images(images: List[bytes]) -> NarudzbaData:
     """
     Extract order data from PDF page images using OpenAI Vision API.
-    
+
     Args:
         images: List of image bytes (one per PDF page)
-    
+
     Returns:
         NarudzbaData with extracted information
+
+    Raises:
+        ValueError: If too many pages
+        RuntimeError: If API call fails after retries
     """
+    if len(images) > MAX_PAGES:
+        raise ValueError(
+            f"PDF ima {len(images)} stranica (maksimum je {MAX_PAGES}). "
+            "Molimo podijelite dokument na manje dijelove."
+        )
+
     client = get_client()
-    
+
     # Build content with all images
     content = [{"type": "text", "text": EXTRACTION_PROMPT}]
-    
+
     for img_bytes in images:
         base64_image = encode_image_to_base64(img_bytes)
         content.append({
@@ -148,28 +167,57 @@ def extract_data_from_images(images: List[bytes]) -> NarudzbaData:
                 "detail": "high"
             }
         })
-    
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {
-                "role": "user",
-                "content": content
-            }
-        ],
-        response_format={
-            "type": "json_schema",
-            "json_schema": {
-                "name": "narudzba_extraction",
-                "strict": True,
-                "schema": EXTRACTION_SCHEMA
-            }
-        },
-        max_tokens=4096
-    )
-    
+
+    # Retry with exponential backoff for transient errors
+    last_exception = None
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": content
+                    }
+                ],
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "narudzba_extraction",
+                        "strict": True,
+                        "schema": EXTRACTION_SCHEMA
+                    }
+                },
+                max_tokens=16384
+            )
+            break
+        except APITimeoutError as e:
+            last_exception = e
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(2 ** attempt)
+                continue
+            raise RuntimeError(
+                "OpenAI API nije odgovorio na vrijeme. Pokušajte ponovo ili s manjim PDF-om."
+            ) from e
+        except RateLimitError as e:
+            last_exception = e
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(2 ** (attempt + 1))
+                continue
+            raise RuntimeError(
+                "Previše zahtjeva prema OpenAI API-u. Pričekajte minutu i pokušajte ponovo."
+            ) from e
+        except APIStatusError as e:
+            last_exception = e
+            if e.status_code in (500, 502, 503) and attempt < MAX_RETRIES - 1:
+                time.sleep(2 ** attempt)
+                continue
+            raise RuntimeError(
+                f"OpenAI API greška ({e.status_code}). Pokušajte ponovo kasnije."
+            ) from e
+
     result = json.loads(response.choices[0].message.content)
-    
+
     artikli = [
         Artikl(
             redni_broj=a["redni_broj"],
@@ -181,7 +229,7 @@ def extract_data_from_images(images: List[bytes]) -> NarudzbaData:
         )
         for a in result["artikli"]
     ]
-    
+
     return NarudzbaData(
         broj_narudzbe=result["broj_narudzbe"],
         artikli=artikli

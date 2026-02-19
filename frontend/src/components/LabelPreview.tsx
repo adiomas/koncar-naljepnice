@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { LabelData } from "../types";
 
 interface LabelPreviewProps {
@@ -42,7 +43,7 @@ function getSingleLineStyle(
   };
 }
 
-export function LabelPreview({ label, index }: LabelPreviewProps) {
+export const LabelPreview = memo(function LabelPreview({ label, index }: LabelPreviewProps) {
   // Dynamic styles for single-line fields (all except Naziv)
   // Max chars are based on available width in preview component
   const noviBrojStyle = getSingleLineStyle(label.novi_broj_dijela, 14, 9, 5);
@@ -135,5 +136,5 @@ export function LabelPreview({ label, index }: LabelPreviewProps) {
       </div>
     </div>
   );
-}
+});
 

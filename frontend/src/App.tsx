@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { extractFromPdf, generateLabels, type OutputFormat } from './api';
 import { FileUpload } from './components/FileUpload';
 import { LabelEditor } from './components/LabelEditor';
 import { LabelPreview } from './components/LabelPreview';
 import type { LabelData, NarudzbaData } from './types';
+
+function getLabelKey(label: LabelData, index: number): string {
+  return `${label.narudzba}-${index}-${label.naziv.slice(0, 20)}`;
+}
 
 type Step = 'upload' | 'review' | 'edit';
 
@@ -45,11 +49,11 @@ function App() {
     }
   };
 
-  const handleLabelChange = (index: number, field: keyof LabelData, value: string) => {
-    setLabels(prev => prev.map((label, i) => 
+  const handleLabelChange = useCallback((index: number, field: keyof LabelData, value: string) => {
+    setLabels(prev => prev.map((label, i) =>
       i === index ? { ...label, [field]: value } : label
     ));
-  };
+  }, []);
 
   const handleGenerateLabels = async () => {
     setIsGenerating(true);
@@ -218,8 +222,8 @@ function App() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   {labels.map((label, index) => (
-                    <div 
-                      key={index}
+                    <div
+                      key={getLabelKey(label, index)}
                       onClick={() => setEditingIndex(index)}
                       className={`relative cursor-pointer transition-all hover:scale-[1.02] ${editingIndex === index ? 'ring-2 ring-amber-400 ring-offset-2 rounded-lg' : ''}`}
                     >

@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 
+const MAX_FILE_SIZE = 30 * 1024 * 1024; // 30MB
+
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
   isLoading: boolean;
@@ -7,6 +9,20 @@ interface FileUploadProps {
 
 export function FileUpload({ onFileSelect, isLoading }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  const validateAndSelect = useCallback((file: File) => {
+    setFileError(null);
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setFileError('Samo PDF datoteke su podržane.');
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError(`Datoteka je prevelika (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maksimum je 30MB.`);
+      return;
+    }
+    onFileSelect(file);
+  }, [onFileSelect]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -32,19 +48,16 @@ export function FileUpload({ onFileSelect, isLoading }: FileUploadProps) {
 
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      const file = files[0];
-      if (file.type === 'application/pdf') {
-        onFileSelect(file);
-      }
+      validateAndSelect(files[0]);
     }
-  }, [onFileSelect]);
+  }, [validateAndSelect]);
 
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      onFileSelect(files[0]);
+      validateAndSelect(files[0]);
     }
-  }, [onFileSelect]);
+  }, [validateAndSelect]);
 
   return (
     <div
@@ -102,8 +115,14 @@ export function FileUpload({ onFileSelect, isLoading }: FileUploadProps) {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <span>Samo PDF datoteke</span>
+          <span>Samo PDF datoteke (max 30MB)</span>
         </div>
+
+        {fileError && (
+          <div className="mt-2 text-sm text-red-600 font-medium">
+            {fileError}
+          </div>
+        )}
       </div>
     </div>
   );

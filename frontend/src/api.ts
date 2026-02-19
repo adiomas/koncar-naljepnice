@@ -3,20 +3,46 @@ import type { LabelData, NarudzbaData } from "./types";
 // Use environment variable for API URL, fallback to localhost for development
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+const API_TIMEOUT = 120_000; // 120 seconds
+
 export type OutputFormat = 'pdf' | 'png';
+
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = API_TIMEOUT): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
+function handleFetchError(err: unknown, operation: string): never {
+  if (err instanceof DOMException && err.name === 'AbortError') {
+    throw new Error(`Zahtjev je istekao (timeout). ${operation} traje predugo — pokušajte s manjim dokumentom.`);
+  }
+  if (err instanceof TypeError && err.message.includes('fetch')) {
+    throw new Error('Nije moguće spojiti se na server. Provjerite mrežnu vezu.');
+  }
+  throw err;
+}
 
 export async function extractFromPdf(file: File): Promise<NarudzbaData> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${API_BASE}/extract`, {
-    method: 'POST',
-    body: formData,
-  });
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(`${API_BASE}/extract`, {
+      method: 'POST',
+      body: formData,
+    });
+  } catch (err) {
+    handleFetchError(err, 'Ekstrakcija podataka');
+  }
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to extract data from PDF');
+    throw new Error(error.detail || 'Greška pri ekstrakciji podataka iz PDF-a');
   }
 
   return response.json();
@@ -29,33 +55,36 @@ export interface GenerateLabelsResult {
 }
 
 export async function generateLabels(
-  labels: LabelData[], 
+  labels: LabelData[],
   format: OutputFormat = 'pdf'
 ): Promise<GenerateLabelsResult> {
-  const response = await fetch(`${API_BASE}/generate-pdf`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ labels, format }),
-  });
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(`${API_BASE}/generate-pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ labels, format }),
+    });
+  } catch (err) {
+    handleFetchError(err, 'Generiranje naljepnica');
+  }
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to generate labels');
+    throw new Error(error.detail || 'Greška pri generiranju naljepnica');
   }
 
   const arrayBuffer = await response.arrayBuffer();
-  
+
   if (format === 'png') {
-    // PNG format returns a ZIP file
     return {
       blob: new Blob([arrayBuffer], { type: 'application/zip' }),
       filename: 'naljepnice.zip',
       mimeType: 'application/zip'
     };
   } else {
-    // PDF format
     return {
       blob: new Blob([arrayBuffer], { type: 'application/pdf' }),
       filename: 'naljepnice.pdf',
