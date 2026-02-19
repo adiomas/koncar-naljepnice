@@ -156,9 +156,12 @@ function App() {
             <FileUpload onFileSelect={handleFileSelect} isLoading={isLoading} />
             
             {isLoading && (
-              <div className="mt-6 flex items-center justify-center gap-3 text-zinc-600">
-                <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm">Ekstrahiram podatke pomoću AI...</span>
+              <div className="mt-6 flex flex-col items-center gap-2 text-zinc-600">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Ekstrahiram podatke pomoću AI...</span>
+                </div>
+                <span className="text-xs text-zinc-400">Obrada većih dokumenata može potrajati do nekoliko minuta</span>
               </div>
             )}
           </div>

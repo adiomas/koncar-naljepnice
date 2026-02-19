@@ -3,7 +3,7 @@ import type { LabelData, NarudzbaData } from "./types";
 // Use environment variable for API URL, fallback to localhost for development
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-const API_TIMEOUT = 120_000; // 120 seconds
+const API_TIMEOUT = 300_000; // 5 minutes - large PDFs with many pages need more time
 
 export type OutputFormat = 'pdf' | 'png';
 

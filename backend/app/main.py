@@ -5,10 +5,9 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
-from .extraction import extract_data_from_images
+from .extraction import extract_data_from_pdf
 from .label_generator import generate_labels_pdf, generate_labels_png
 from .models import GenerateLabelsRequest, NarudzbaData, OutputFormat
-from .pdf_processor import convert_pdf_to_images
 
 app = FastAPI(
     title="Končar Naljepnice API",
@@ -58,8 +57,8 @@ async def extract_from_pdf(file: UploadFile = File(...)):
     """
     Extract order data from a PDF file.
 
-    Accepts a PDF file, converts pages to images, and uses OpenAI Vision
-    to extract structured data about items in the order.
+    Sends the PDF directly to OpenAI API (native PDF input) to extract
+    structured data about items in the order.
     """
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Samo PDF datoteke su podržane")
@@ -74,14 +73,8 @@ async def extract_from_pdf(file: UploadFile = File(...)):
                 detail=f"Datoteka je prevelika ({len(pdf_bytes) // (1024*1024)}MB). Maksimum je 30MB."
             )
 
-        # Convert PDF to images
-        images = convert_pdf_to_images(pdf_bytes)
-
-        if not images:
-            raise HTTPException(status_code=400, detail="Nije moguće ekstrahirati stranice iz PDF-a")
-
-        # Extract data using OpenAI Vision
-        data = extract_data_from_images(images)
+        # Extract data using OpenAI native PDF input
+        data = extract_data_from_pdf(pdf_bytes)
 
         return data
 
