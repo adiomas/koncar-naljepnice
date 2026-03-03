@@ -5,7 +5,12 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
-from .extraction import extract_data_from_pdf
+from .extraction import (
+    extract_data_from_pdf,
+    InsufficientQuotaError,
+    OpenAIRateLimitError,
+    OpenAITimeoutError,
+)
 from .label_generator import generate_labels_pdf, generate_labels_png
 from .models import GenerateLabelsRequest, NarudzbaData, OutputFormat
 
@@ -82,6 +87,13 @@ async def extract_from_pdf(file: UploadFile = File(...)):
         raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except InsufficientQuotaError as e:
+        raise HTTPException(status_code=402, detail=str(e))
+    except OpenAIRateLimitError as e:
+        headers = {"Retry-After": str(e.retry_after)} if e.retry_after else None
+        raise HTTPException(status_code=429, detail=str(e), headers=headers)
+    except OpenAITimeoutError as e:
+        raise HTTPException(status_code=504, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:

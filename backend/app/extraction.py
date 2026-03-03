@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 import time
 from typing import Optional
 
@@ -9,7 +10,26 @@ from openai import APITimeoutError, OpenAI, RateLimitError, APIStatusError
 from .config import OPENAI_API_KEY
 from .models import Artikl, NarudzbaData
 
-MAX_RETRIES = 2
+logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 4
+
+
+class InsufficientQuotaError(Exception):
+    """OpenAI račun nema dovoljno kredita."""
+    pass
+
+
+class OpenAIRateLimitError(Exception):
+    """Privremeni rate limit od OpenAI API-ja."""
+    def __init__(self, message: str, retry_after: int | None = None):
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+class OpenAITimeoutError(Exception):
+    """OpenAI API timeout."""
+    pass
 API_TIMEOUT = 300  # seconds
 
 # Initialize client lazily
@@ -183,25 +203,49 @@ def extract_data_from_pdf(pdf_bytes: bytes) -> NarudzbaData:
             break
         except APITimeoutError as e:
             last_exception = e
+            logger.warning("OpenAI API timeout (pokušaj %d/%d)", attempt + 1, MAX_RETRIES)
             if attempt < MAX_RETRIES - 1:
                 time.sleep(2 ** attempt)
                 continue
-            raise RuntimeError(
+            raise OpenAITimeoutError(
                 "OpenAI API nije odgovorio na vrijeme. Pokušajte ponovo ili s manjim PDF-om."
             ) from e
         except RateLimitError as e:
             last_exception = e
+            # Razlikuj insufficient_quota (trajno) od rate limit (privremeno)
+            error_type = None
+            if e.body and isinstance(e.body, dict):
+                error_type = e.body.get("error", {}).get("type")
+            if error_type == "insufficient_quota":
+                logger.error("OpenAI račun nema dovoljno kredita (insufficient_quota)")
+                raise InsufficientQuotaError(
+                    "OpenAI račun nema dovoljno kredita. Dodajte sredstva na https://platform.openai.com/account/billing"
+                ) from e
+            # Privremeni rate limit — retry s backoff-om
+            retry_after = None
+            if hasattr(e, "response") and e.response is not None:
+                retry_after_str = e.response.headers.get("retry-after") or e.response.headers.get("Retry-After")
+                if retry_after_str:
+                    try:
+                        retry_after = int(retry_after_str)
+                    except ValueError:
+                        pass
+            backoff_times = [5, 15, 30, 60]
+            wait = retry_after if retry_after else backoff_times[min(attempt, len(backoff_times) - 1)]
+            logger.warning("OpenAI rate limit (pokušaj %d/%d), čekam %ds", attempt + 1, MAX_RETRIES, wait)
             if attempt < MAX_RETRIES - 1:
-                time.sleep(2 ** (attempt + 1))
+                time.sleep(wait)
                 continue
-            raise RuntimeError(
-                "Previše zahtjeva prema OpenAI API-u. Pričekajte minutu i pokušajte ponovo."
+            raise OpenAIRateLimitError(
+                "Previše zahtjeva prema OpenAI API-u. Pričekajte minutu i pokušajte ponovo.",
+                retry_after=retry_after,
             ) from e
         except APIStatusError as e:
             last_exception = e
-            print(f"[EXTRACTION] APIStatusError {e.status_code}: {e.message}")
-            print(f"[EXTRACTION] Response body: {e.body}")
+            logger.error("OpenAI APIStatusError %d: %s", e.status_code, e.message)
+            logger.error("Response body: %s", e.body)
             if e.status_code in (500, 502, 503) and attempt < MAX_RETRIES - 1:
+                logger.warning("Retry nakon server greške (pokušaj %d/%d)", attempt + 1, MAX_RETRIES)
                 time.sleep(2 ** attempt)
                 continue
             raise RuntimeError(
